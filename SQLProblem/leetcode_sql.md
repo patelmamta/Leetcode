@@ -183,3 +183,248 @@ WHERE description NOT LIKE '%boring%'
 AND (id%2) != 0
 ORDER BY rating DESC;
 ```
+
+16. [1251. Average Selling Price](https://leetcode.com/problems/average-selling-price/description/?envType=study-plan-v2&envId=top-sql-50) - (Easy)
+
+```
+SELECT
+    p.product_id,
+    ROUND(IFNULL(SUM(p.price * u.units)/SUM(u.units), 0), 2) as average_price
+    FROM Prices p
+    LEFT JOIN
+    UnitsSold u
+    ON u.purchase_date
+    BETWEEN p.start_date AND p.end_date
+    AND p.product_id = u.product_id
+    GROUP BY product_id;
+```
+
+17. [1075. Project Employees I](https://leetcode.com/problems/project-employees-i/description/?envType=study-plan-v2&envId=top-sql-50) - (Easy)
+
+```
+SELECT
+  project_id,
+  ROUND(AVG(e.experience_years), 2) as average_years
+FROM Project p
+JOIN Employee e
+ON e.employee_id = p.employee_id
+GROUP BY p.project_id;
+```
+
+18. [1633. Percentage of Users Attended a Contest](https://leetcode.com/problems/percentage-of-users-attended-a-contest/description/?envType=study-plan-v2&envId=top-sql-50) - (Easy)
+
+```
+WITH UserCount AS (
+    SELECT COUNT(*) AS count FROM Users
+)
+SELECT
+    r.contest_id,
+    ROUND((COUNT(r.user_id)/ (SELECT count from UserCount)) * 100, 2) AS percentage
+FROM Register r
+GROUP BY r.contest_id
+ORDER BY percentage DESC, r.contest_id ASC;
+```
+
+19. [1211. Queries Quality and Percentage](https://leetcode.com/problems/queries-quality-and-percentage/description/?envType=study-plan-v2&envId=top-sql-50) - (Easy)
+
+```
+SELECT
+  DISTINCT(query_name) AS query_name,
+  ROUND(SUM(rating/position)/count(query_name), 2) AS quality,
+  ROUND((SUM(IF(rating < 3, 1, 0)) * 100) / count(query_name),2) AS poor_query_percentage
+FROM Queries
+GROUP BY query_name;
+```
+
+20. [1193. Monthly Transactions I](https://leetcode.com/problems/monthly-transactions-i/description/?envType=study-plan-v2&envId=top-sql-50) - (Medium)
+
+```
+SELECT
+    DATE_FORMAT(trans_date, '%Y-%m') AS month,
+    country,
+    COUNT(id) AS trans_count,
+    SUM(IF(state = 'approved', 1, 0)) AS approved_count,
+    SUM(amount) AS trans_total_amount,
+    SUM(IF(state = 'approved', amount, 0)) AS approved_total_amount
+FROM Transactions
+GROUP BY month, country;
+```
+
+21. [1174. Immediate Food Delivery II](https://leetcode.com/problems/immediate-food-delivery-ii/description/?envType=study-plan-v2&envId=top-sql-50) - (Medium)
+
+```
+WITH ImmediateOrders AS (
+  SELECT
+    customer_id,
+    MIN(order_date) AS min_order
+  FROM Delivery
+  GROUP BY customer_id
+)
+SELECT
+  ROUND(SUM(IF(i.min_order=d.customer_pref_delivery_date, 1, 0)) * 100.0 / COUNT(*), 2) AS immediate_percentage
+FROM Delivery d
+JOIN ImmediateOrders i ON d.order_date = i.min_order
+AND  d.customer_id = i.customer_id;
+```
+
+22. [550. Game Play Analysis IV](https://leetcode.com/problems/game-play-analysis-iv/description/?envType=study-plan-v2&envId=top-sql-50) - (Medium)
+
+```
+WITH FirstLogin AS (
+  SELECT
+    MIN(event_date) as event_date,
+    player_id
+  FROM Activity
+  GROUP BY player_id
+)
+
+SELECT
+  ROUND(count(*) / (SELECT count(*) FROM FirstLogin), 2) AS fraction
+FROM FirstLogin a
+JOIN Activity b
+ON a.player_id = b.player_id
+AND DATEDIFF(b.event_date, a.event_date) = 1;
+```
+
+23. [2356. Number of Unique Subjects Taught by Each Teacher](https://leetcode.com/problems/number-of-unique-subjects-taught-by-each-teacher/description/?envType=study-plan-v2&envId=top-sql-50) - (Easy)
+
+```
+SELECT
+  teacher_id,
+  COUNT(DISTINCT(subject_id)) AS cnt
+FROM Teacher
+GROUP BY teacher_id;
+```
+
+24. [1141. User Activity for the Past 30 Days I](https://leetcode.com/problems/user-activity-for-the-past-30-days-i/description/?envType=study-plan-v2&envId=top-sql-50) - (Easy)
+
+```
+SELECT
+  activity_date AS day,
+  count(DISTINCT(user_id)) AS active_users
+FROM
+  Activity
+WHERE
+  activity_date BETWEEN '2019-06-28' AND '2019-07-27'
+GROUP BY
+  activity_date;
+```
+
+25. [1070. Product Sales Analysis III](https://leetcode.com/problems/product-sales-analysis-iii/description/?envType=study-plan-v2&envId=top-sql-50) - (Medium)
+
+```
+WITH FirstYear AS (
+  SELECT
+    product_id,
+    MIN(year) AS first_year
+  FROM Sales
+  GROUP BY product_id
+)
+
+SELECT
+  product_id,
+  year AS first_year,
+  quantity,
+  price
+FROM
+  Sales
+WHERE
+  (product_id, year) IN (
+SELECT
+  product_id,
+  first_year
+FROM
+  FirstYear
+);
+```
+
+26. [596. Classes With at Least 5 Students](https://leetcode.com/problems/classes-with-at-least-5-students/description/?envType=study-plan-v2&envId=top-sql-50) - (Easy)
+
+```
+SELECT
+  class
+FROM
+  Courses
+GROUP BY class
+HAVING count(student) >= 5;
+```
+
+27. [1729. Find Followers Count](https://leetcode.com/problems/find-followers-count/description/?envType=study-plan-v2&envId=top-sql-50) - (Easy)
+
+```
+SELECT
+  user_id,
+  count(follower_id) AS followers_count
+FROM
+  Followers
+GROUP BY
+  user_id
+ORDER BY
+  user_id;
+```
+
+28. [619. Biggest Single Number](https://leetcode.com/problems/biggest-single-number/description/?envType=study-plan-v2&envId=top-sql-50) - (Easy)
+
+```
+WITH SingleNumbers AS (SELECT
+  num
+FROM
+  MyNumbers
+GROUP BY num
+HAVING COUNT(num) = 1
+)
+
+SELECT
+  MAX(num) AS num
+FROM
+  SingleNumbers;
+```
+
+29. [1045. Customers Who Bought All Products](https://leetcode.com/problems/customers-who-bought-all-products/description/?envType=study-plan-v2&envId=top-sql-50) - (Medium)
+
+```
+SELECT
+  c.customer_id
+FROM
+  Customer c
+GROUP BY customer_id
+HAVING
+  COUNT(DISTINCT(c.product_key)) = (SELECT COUNT(*) FROM Product);
+```
+
+30. [1731. The Number of Employees Which Report to Each Employee](https://leetcode.com/problems/the-number-of-employees-which-report-to-each-employee/description/?envType=study-plan-v2&envId=top-sql-50) - (Easy)
+
+```
+SELECT
+    e.employee_id,
+    e.name,
+    COUNT(m.employee_id) as reports_count,
+    ROUND(AVG(m.age), 0) as average_age
+FROM
+    Employees e
+JOIN
+    Employees m
+ON
+    e.employee_id = m.reports_to
+GROUP BY m.reports_to
+ORDER BY e.employee_id;
+```
+
+31. [1789. Primary Department for Each Employee](https://leetcode.com/problems/primary-department-for-each-employee/description/?envType=study-plan-v2&envId=top-sql-50) - (Easy)
+
+```
+SELECT
+    employee_id,
+    department_id
+FROM
+    Employee
+WHERE
+    primary_flag = 'Y'  OR (department_id, employee_id) IN (
+        SELECT
+            department_id,
+            employee_id
+        FROM Employee
+        GROUP BY employee_id
+        HAVING(count(department_id) = 1)
+    );
+```
